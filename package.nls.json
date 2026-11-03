@@ -1,0 +1,10 @@
+{
+  "description": "Shows your remaining Fish Audio credits in the status bar.",
+  "command.setApiKey.title": "Set API Key",
+  "command.clearApiKey.title": "Remove API Key",
+  "command.refresh.title": "Refresh Credit Balance",
+  "command.openBilling.title": "Open Billing Page",
+  "config.title": "Credit Balance for Fish Audio",
+  "config.refreshIntervalMinutes": "How often the balance is refreshed, in minutes. The balance is also refreshed when you come back to a VS Code window and it is older than this.",
+  "config.warningThresholdPercent": "Highlight the status bar item when the remaining plan credits fall below this percentage of the plan total. Set to `0` to turn the highlight off."
+}

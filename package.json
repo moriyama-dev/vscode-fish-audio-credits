@@ -1,0 +1,121 @@
+{
+  "name": "vscode-fish-audio-credits",
+  "displayName": "Credit Balance for Fish Audio",
+  "description": "%description%",
+  "version": "0.1.0",
+  "publisher": "moriyama-dev",
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "author": {
+    "name": "Yoshiro Moriyama"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moriyama-dev/vscode-fish-audio-credits.git"
+  },
+  "homepage": "https://github.com/moriyama-dev/vscode-fish-audio-credits#readme",
+  "bugs": {
+    "url": "https://github.com/moriyama-dev/vscode-fish-audio-credits/issues"
+  },
+  "engines": {
+    "vscode": "^1.144.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "fish audio",
+    "credits",
+    "balance",
+    "tts",
+    "status bar"
+  ],
+  "main": "./dist/extension.js",
+  "l10n": "./l10n",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": true
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "fishAudioCredits.setApiKey",
+        "title": "%command.setApiKey.title%",
+        "category": "Fish Audio"
+      },
+      {
+        "command": "fishAudioCredits.clearApiKey",
+        "title": "%command.clearApiKey.title%",
+        "category": "Fish Audio"
+      },
+      {
+        "command": "fishAudioCredits.refresh",
+        "title": "%command.refresh.title%",
+        "category": "Fish Audio",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "fishAudioCredits.openBilling",
+        "title": "%command.openBilling.title%",
+        "category": "Fish Audio"
+      }
+    ],
+    "configuration": {
+      "title": "%config.title%",
+      "properties": {
+        "fishAudioCredits.refreshIntervalMinutes": {
+          "type": "number",
+          "default": 30,
+          "minimum": 5,
+          "maximum": 1440,
+          "markdownDescription": "%config.refreshIntervalMinutes%"
+        },
+        "fishAudioCredits.warningThresholdPercent": {
+          "type": "number",
+          "default": 10,
+          "minimum": 0,
+          "maximum": 100,
+          "markdownDescription": "%config.warningThresholdPercent%"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node esbuild.mjs --production",
+    "compile": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "build:tests": "node esbuild.mjs --tests",
+    "test:unit": "npm run build:tests && node --test \"out/test/unit/*.test.js\"",
+    "test:integration": "npm run build && npm run build:tests && vscode-test",
+    "test": "npm run test:unit && npm run test:integration",
+    "package": "node -e \"require('fs').mkdirSync('release',{recursive:true})\" && vsce package --no-dependencies --out release/"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/mocha": "10.0.10",
+    "@types/node": "22.20.5",
+    "@types/vscode": "1.144.0",
+    "@vscode/test-cli": "0.0.15",
+    "@vscode/test-electron": "3.1.0",
+    "@vscode/vsce": "4.1.0",
+    "esbuild": "0.28.2",
+    "eslint": "10.14.0",
+    "prettier": "3.9.10",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.1"
+  }
+}
