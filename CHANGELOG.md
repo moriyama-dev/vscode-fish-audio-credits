@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1 - 2026-11-06
+
+- Install in VSCodium and in VS Code 1.143. The extension needed VS Code 1.144 before, which VSCodium has not reached yet.
+- The README explains how to install and update the extension in VS Code and VSCodium on Windows, macOS and Ubuntu.
+
 ## 0.1.0 - 2026-11-03
 
 Initial release.

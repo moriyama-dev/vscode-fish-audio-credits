@@ -2,7 +2,7 @@
   "name": "vscode-fish-audio-credits",
   "displayName": "Credit Balance for Fish Audio",
   "description": "%description%",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "moriyama-dev",
   "license": "MIT",
   "icon": "images/icon.png",
@@ -18,7 +18,7 @@
     "url": "https://github.com/moriyama-dev/vscode-fish-audio-credits/issues"
   },
   "engines": {
-    "vscode": "^1.144.0"
+    "vscode": "^1.143.0"
   },
   "categories": [
     "Other"
@@ -108,7 +108,7 @@
     "@eslint/js": "10.0.1",
     "@types/mocha": "10.0.10",
     "@types/node": "22.20.5",
-    "@types/vscode": "1.144.0",
+    "@types/vscode": "1.140.0",
     "@vscode/test-cli": "0.0.15",
     "@vscode/test-electron": "3.1.0",
     "@vscode/vsce": "4.1.0",

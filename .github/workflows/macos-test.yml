@@ -1,0 +1,33 @@
+# Builds the extension and runs its unit and integration tests in a real
+# VS Code on GitHub's standard macOS runner. Run it before every release.
+#
+# Manual or tag push only, read-only token, no secrets.
+
+name: macOS test
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run package
