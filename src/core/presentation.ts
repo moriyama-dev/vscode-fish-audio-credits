@@ -1,4 +1,4 @@
-import type { Balances } from './fish-api';
+import type { Balances, PlanCredits } from './fish-api';
 
 export type Severity = 'normal' | 'warning' | 'error';
 
@@ -55,4 +55,45 @@ export function clampInterval(minutes: number): number {
     return 30;
   }
   return Math.min(1440, Math.max(5, minutes));
+}
+
+const DAY_MS = 86_400_000;
+
+/**
+ * When the plan credits are next refilled. Fish Audio refills them monthly
+ * on a UTC day of the month (`anchor_day`, moved to the month's last day in
+ * shorter months). Without an anchor day the day and time of `finished_at`
+ * are used, then the day of `updated_at`. The time of day is taken from
+ * `finished_at`, or midnight UTC. Undefined when nothing says which day.
+ */
+export function nextCreditReset(plan: PlanCredits, now: Date): Date | undefined {
+  const day = plan.anchorDay ?? plan.finishedAt?.getUTCDate() ?? plan.updatedAt?.getUTCDate();
+  if (day === undefined) {
+    return undefined;
+  }
+  const hours = plan.finishedAt?.getUTCHours() ?? 0;
+  const minutes = plan.finishedAt?.getUTCMinutes() ?? 0;
+  const inMonth = (year: number, month: number): Date => {
+    const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    return new Date(Date.UTC(year, month, Math.min(day, lastDay), hours, minutes));
+  };
+  let reset = inMonth(now.getUTCFullYear(), now.getUTCMonth());
+  if (reset.getTime() <= now.getTime()) {
+    reset = inMonth(now.getUTCFullYear(), now.getUTCMonth() + 1);
+  }
+  // A plan that ends first gives no monthly refill after its end.
+  if (plan.finishedAt && plan.finishedAt.getTime() > now.getTime() && plan.finishedAt.getTime() < reset.getTime()) {
+    return plan.finishedAt;
+  }
+  return reset;
+}
+
+/** Whole days until a moment, rounded up, so anything left today counts as one day. */
+export function daysUntil(when: Date, now: Date): number {
+  return Math.max(0, Math.ceil((when.getTime() - now.getTime()) / DAY_MS));
+}
+
+/** True when two moments are within a minute of each other. */
+export function sameMoment(a: Date, b: Date): boolean {
+  return Math.abs(a.getTime() - b.getTime()) < 60_000;
 }

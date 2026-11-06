@@ -4,6 +4,14 @@ name: Publish
 # Visual Studio Marketplace through Trusted Publishing, then attaches the
 # .vsix to a GitHub release. Running the workflow by hand does everything
 # except publishing, so the pipeline can be checked without releasing.
+#
+# Two jobs on purpose: the build job installs every dev dependency and runs
+# the tests with a read-only token and no publishing rights. Only the
+# publish job can mint the Marketplace credential and write the release,
+# and it installs nothing but the pinned packages from package-lock.json,
+# with their install scripts turned off.
+#
+# Actions are pinned to full commit SHAs so a moved tag cannot change them.
 on:
   push:
     tags:
@@ -14,20 +22,18 @@ permissions:
   contents: read
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     permissions:
-      # Exchanged for a short-lived Marketplace credential; no stored token is needed.
-      id-token: write
-      # Creates the GitHub release.
-      contents: write
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
-          cache: npm
 
       - run: npm ci
 
@@ -51,18 +57,42 @@ jobs:
 
       - run: npm run package
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: vsix
           path: release/*.vsix
           if-no-files-found: error
 
+  publish:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      # Exchanged for a short-lived Marketplace credential; no stored token is needed.
+      id-token: write
+      # Creates the GitHub release.
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+
+      # Only for vsce, at the version in package-lock.json; no install scripts run.
+      - run: npm ci --ignore-scripts
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: vsix
+          path: release
+
       - name: Publish to the Visual Studio Marketplace
-        if: startsWith(github.ref, 'refs/tags/')
-        run: npx vsce publish --oidc --packagePath release/*.vsix
+        run: npx --no-install vsce publish --oidc --packagePath release/*.vsix
 
       - name: Create the GitHub release
-        if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -73,4 +103,4 @@ jobs:
             found && /^## / { exit }
             found { print }
           ' CHANGELOG.md > release-notes.md
-          gh release create "$GITHUB_REF_NAME" release/*.vsix --title "$GITHUB_REF_NAME" --notes-file release-notes.md
+          gh release create "$GITHUB_REF_NAME" release/*.vsix --title "$GITHUB_REF_NAME" --notes-file release-notes.md --repo "$GITHUB_REPOSITORY"

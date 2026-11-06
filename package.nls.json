@@ -3,6 +3,7 @@
   "command.setApiKey.title": "Set API Key",
   "command.clearApiKey.title": "Remove API Key",
   "command.refresh.title": "Refresh Credit Balance",
+  "command.showDetails.title": "Show Credit Details",
   "command.openBilling.title": "Open Billing Page",
   "config.title": "Credit Balance for Fish Audio",
   "config.refreshIntervalMinutes": "How often the balance is refreshed, in minutes. The balance is also refreshed when you come back to a VS Code window and it is older than this.",

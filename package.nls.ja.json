@@ -3,6 +3,7 @@
   "command.setApiKey.title": "API キーを設定",
   "command.clearApiKey.title": "API キーを削除",
   "command.refresh.title": "クレジット残高を更新",
+  "command.showDetails.title": "クレジットの詳細を表示",
   "command.openBilling.title": "支払いページを開く",
   "config.title": "Credit Balance for Fish Audio",
   "config.refreshIntervalMinutes": "残高を更新する間隔（分）。VS Code の窓に戻ったとき、前回の更新からこの時間が過ぎていれば、その場でも更新します。",

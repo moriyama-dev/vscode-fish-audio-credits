@@ -1,6 +1,15 @@
 import * as vscode from 'vscode';
 import { type Balances, type FetchFn, fetchBalances, InvalidApiKeyError } from './core/fish-api';
-import { clampInterval, formatCredits, formatUsd, headline, isStale } from './core/presentation';
+import {
+  clampInterval,
+  daysUntil,
+  formatCredits,
+  formatUsd,
+  headline,
+  isStale,
+  nextCreditReset,
+  sameMoment,
+} from './core/presentation';
 
 export const CONFIG_SECTION = 'fishAudioCredits';
 export const SECRET_KEY = 'fishAudioCredits.apiKey';
@@ -9,7 +18,17 @@ export const COMMANDS = {
   clearApiKey: 'fishAudioCredits.clearApiKey',
   refresh: 'fishAudioCredits.refresh',
   openBilling: 'fishAudioCredits.openBilling',
+  showDetails: 'fishAudioCredits.showDetails',
 } as const;
+
+/** One line of the details, shown both on hover and on click. */
+interface DetailLine {
+  icon: string;
+  /** Plain text; the tooltip escapes it. */
+  label: string;
+  /** Shown in bold in the tooltip and as a description in the click list. */
+  value?: string;
+}
 
 const ICON = '$(unmute)';
 
@@ -140,7 +159,7 @@ export class CreditStatus implements vscode.Disposable {
     const item = this.item;
     const locale = vscode.env.language;
     item.backgroundColor = undefined;
-    item.command = COMMANDS.refresh;
+    item.command = COMMANDS.showDetails;
 
     switch (this.state.kind) {
       case 'noKey':
@@ -150,7 +169,7 @@ export class CreditStatus implements vscode.Disposable {
         return;
       case 'loading':
         item.text = `$(sync~spin) ${vscode.l10n.t('Fish Audio')}`;
-        item.tooltip = vscode.l10n.t('Reading your Fish Audio credits...');
+        item.tooltip = this.tooltip();
         return;
       case 'invalidKey':
         item.text = `$(key) ${vscode.l10n.t('Fish Audio')}`;
@@ -164,7 +183,7 @@ export class CreditStatus implements vscode.Disposable {
         if (head.severity !== 'normal') {
           item.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
         }
-        item.tooltip = this.tooltip(this.state.balances, undefined);
+        item.tooltip = this.tooltip();
         return;
       }
       case 'failed': {
@@ -172,41 +191,80 @@ export class CreditStatus implements vscode.Disposable {
         item.text = known
           ? `$(warning) ${headline(known, this.warningThreshold(), locale).text}`
           : `$(warning) ${vscode.l10n.t('Fish Audio')}`;
-        item.tooltip = this.tooltip(known, this.state.message);
+        item.tooltip = this.tooltip();
         return;
       }
     }
   }
 
-  private tooltip(balances: Balances | undefined, error: string | undefined): vscode.MarkdownString {
+  /** The details for the current state; the same lines appear on hover and on click. */
+  private details(): DetailLine[] {
+    const state = this.state;
+    if (state.kind === 'loading') {
+      return [{ icon: '$(sync~spin)', label: vscode.l10n.t('Reading your Fish Audio credits...') }];
+    }
+    if (state.kind === 'noKey') {
+      return [{ icon: '$(key)', label: vscode.l10n.t('Set your Fish Audio API key to show your remaining credits.') }];
+    }
+    if (state.kind === 'invalidKey') {
+      return [{ icon: '$(key)', label: vscode.l10n.t('Fish Audio rejected the API key. Click to enter a new one.') }];
+    }
+    const lines: DetailLine[] = [];
+    const balances = state.kind === 'ok' ? state.balances : state.lastKnown;
+    if (state.kind === 'failed') {
+      lines.push({ icon: '$(warning)', label: vscode.l10n.t('Could not refresh: {0}', state.message) });
+    }
+    if (!balances) {
+      return lines;
+    }
     const locale = vscode.env.language;
+    const now = new Date();
+    const when = (date: Date) => date.toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' });
+    const { plan, apiCredit } = balances;
+    if (plan) {
+      const head = headline(balances, this.warningThreshold(), locale);
+      const percent = head.remainingPercent === undefined ? '' : ` (${Math.round(head.remainingPercent)}%)`;
+      lines.push({
+        icon: ICON,
+        label: plan.type ? `${vscode.l10n.t('Plan')} (${plan.type})` : vscode.l10n.t('Plan'),
+        value: `${formatCredits(plan.balance, locale)} / ${formatCredits(plan.total, locale)}${percent}`,
+      });
+      const reset = nextCreditReset(plan, now);
+      if (reset) {
+        const days = daysUntil(reset, now);
+        lines.push({
+          icon: '$(history)',
+          label: vscode.l10n.t('Next credit reset'),
+          value: `${when(reset)} (${days === 1 ? vscode.l10n.t('in 1 day') : vscode.l10n.t('in {0} days', days)})`,
+        });
+      }
+      if (plan.finishedAt && !(reset && sameMoment(reset, plan.finishedAt))) {
+        lines.push({ icon: '$(calendar)', label: vscode.l10n.t('Plan period ends'), value: when(plan.finishedAt) });
+      }
+    } else {
+      lines.push({ icon: ICON, label: vscode.l10n.t('Plan: none') });
+    }
+    if (apiCredit) {
+      lines.push({
+        icon: '$(credit-card)',
+        label: vscode.l10n.t('API credit'),
+        value: formatUsd(apiCredit.credit, locale),
+      });
+    }
+    lines.push({
+      icon: '$(clock)',
+      label: vscode.l10n.t('Updated: {0}', balances.fetchedAt.toLocaleTimeString(locale)),
+    });
+    return lines;
+  }
+
+  private tooltip(): vscode.MarkdownString {
     const md = new vscode.MarkdownString(undefined, true);
     md.isTrusted = { enabledCommands: [COMMANDS.refresh, COMMANDS.setApiKey, COMMANDS.openBilling] };
-    md.appendMarkdown(`**${vscode.l10n.t('Fish Audio Credits')}**\n\n`);
-    if (error) {
-      md.appendMarkdown(`$(warning) ${escape(vscode.l10n.t('Could not refresh: {0}', error))}\n\n`);
-    }
-    if (balances) {
-      const { plan, apiCredit } = balances;
-      if (plan) {
-        const head = headline(balances, this.warningThreshold(), locale);
-        const percent = head.remainingPercent === undefined ? '' : ` (${Math.round(head.remainingPercent)}%)`;
-        md.appendMarkdown(
-          `${escape(vscode.l10n.t('Plan'))}${plan.type ? ` (${escape(plan.type)})` : ''}: ` +
-            `**${formatCredits(plan.balance, locale)}** / ${formatCredits(plan.total, locale)}${percent}\n\n`,
-        );
-        if (plan.finishedAt) {
-          md.appendMarkdown(
-            `${escape(vscode.l10n.t('Current period ends: {0}', plan.finishedAt.toLocaleString(locale)))}\n\n`,
-          );
-        }
-      } else {
-        md.appendMarkdown(`${escape(vscode.l10n.t('Plan: none'))}\n\n`);
-      }
-      if (apiCredit) {
-        md.appendMarkdown(`${escape(vscode.l10n.t('API credit'))}: **${formatUsd(apiCredit.credit, locale)}**\n\n`);
-      }
-      md.appendMarkdown(`${escape(vscode.l10n.t('Updated: {0}', balances.fetchedAt.toLocaleTimeString(locale)))}\n\n`);
+    md.appendMarkdown(`**${escape(vscode.l10n.t('Fish Audio Credits'))}**\n\n`);
+    for (const line of this.details()) {
+      const value = line.value === undefined ? '' : `: **${escape(line.value)}**`;
+      md.appendMarkdown(`${line.icon} ${escape(line.label)}${value}\n\n`);
     }
     md.appendMarkdown(
       `[$(refresh) ${escape(vscode.l10n.t('Refresh'))}](command:${COMMANDS.refresh}) · ` +
@@ -214,6 +272,36 @@ export class CreditStatus implements vscode.Disposable {
         `[$(link-external) ${escape(vscode.l10n.t('Billing'))}](command:${COMMANDS.openBilling})`,
     );
     return md;
+  }
+
+  /**
+   * Shows the same details as the tooltip in a list at the top of the
+   * window, for clicking the status bar item. VS Code has no way to open
+   * a status bar tooltip from code.
+   */
+  async showDetails(): Promise<void> {
+    if (this.state.kind === 'noKey' || this.state.kind === 'invalidKey') {
+      await vscode.commands.executeCommand(COMMANDS.setApiKey);
+      return;
+    }
+    type Item = vscode.QuickPickItem & { command?: string };
+    const items: Item[] = this.details().map((line) => ({
+      label: `${line.icon} ${line.label}`,
+      description: line.value,
+    }));
+    items.push(
+      { label: vscode.l10n.t('Actions'), kind: vscode.QuickPickItemKind.Separator },
+      { label: `$(refresh) ${vscode.l10n.t('Refresh')}`, command: COMMANDS.refresh },
+      { label: `$(key) ${vscode.l10n.t('Change API key')}`, command: COMMANDS.setApiKey },
+      { label: `$(link-external) ${vscode.l10n.t('Billing')}`, command: COMMANDS.openBilling },
+    );
+    const picked = await vscode.window.showQuickPick(items, {
+      title: vscode.l10n.t('Fish Audio Credits'),
+      placeHolder: vscode.l10n.t('Pick an action, or press Escape to close'),
+    });
+    if (picked?.command) {
+      await vscode.commands.executeCommand(picked.command);
+    }
   }
 }
 

@@ -9,8 +9,12 @@ export interface PlanCredits {
   type: string;
   total: number;
   balance: number;
-  /** When the current credit period ends, if the API reports it. */
+  /** When the plan's paid period ends (`finished_at`), if the API reports it. */
   finishedAt: Date | undefined;
+  /** UTC day of the month the credits are refilled on (`anchor_day`, 1-31), if the API reports it. */
+  anchorDay: number | undefined;
+  /** When the package record last changed (`updated_at`); the API's fallback for a missing anchor day. */
+  updatedAt: Date | undefined;
 }
 
 /** Pay-as-you-go API credit in US dollars (GET /wallet/self/api-credit). */
@@ -48,6 +52,15 @@ export class FishApiError extends Error {
 export type FetchFn = typeof fetch;
 
 /**
+ * A key is one run of visible ASCII characters. Anything else is a paste
+ * mistake (a line break, a space, a smart quote), and a line break in a
+ * header could also smuggle in a second header.
+ */
+export function isWellFormedApiKey(value: string): boolean {
+  return /^[\x21-\x7e]{8,512}$/.test(value);
+}
+
+/**
  * Reads both balances. A missing plan package (404) is not an error; an
  * invalid key is, and so is any failure of both requests.
  */
@@ -82,6 +95,8 @@ export async function fetchBalances(
 async function getJson(url: string, apiKey: string, fetchFn: FetchFn): Promise<unknown> {
   const response = await fetchFn(url, {
     headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
+    // Never follow a redirect: the key must reach api.fish.audio and nothing else.
+    redirect: 'error',
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   if (response.status === 401 || response.status === 403) {
@@ -114,13 +129,23 @@ export function parsePlan(value: unknown): PlanCredits | undefined {
   if (total === undefined || balance === undefined) {
     return undefined;
   }
-  const finishedAt = typeof value.finished_at === 'string' ? new Date(value.finished_at) : undefined;
+  const anchorDay = toNumber(value.anchor_day);
   return {
     type: typeof value.type === 'string' ? value.type : '',
     total,
     balance,
-    finishedAt: finishedAt && !Number.isNaN(finishedAt.getTime()) ? finishedAt : undefined,
+    finishedAt: toDate(value.finished_at),
+    anchorDay:
+      anchorDay !== undefined && Number.isInteger(anchorDay) && anchorDay >= 1 && anchorDay <= 31
+        ? anchorDay
+        : undefined,
+    updatedAt: toDate(value.updated_at),
   };
+}
+
+function toDate(value: unknown): Date | undefined {
+  const date = typeof value === 'string' ? new Date(value) : undefined;
+  return date && !Number.isNaN(date.getTime()) ? date : undefined;
 }
 
 export function parseApiCredit(value: unknown): ApiCredit | undefined {

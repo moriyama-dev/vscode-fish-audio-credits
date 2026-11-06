@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 - 2026-11-06
+
+- Click the status bar item to see the details in a list at the top of the window. Before, a click refreshed the balance, and the details only appeared on hover. Refresh is now in the details and in the Command Palette.
+- The details show when the plan credits are next refilled each month, with the days left. The end of the plan's paid period is shown separately.
+- New command: **Fish Audio: Show Credit Details**.
+- The API key is never sent on through a redirect, and a pasted key with spaces, line breaks or other stray characters is caught before it is checked.
+- The README explains where the key is stored on each operating system and how to keep it safe. It is also available in Japanese (README.ja.md).
+- The release workflow publishes from a separate job that runs no tests and no install scripts, and its GitHub Actions are pinned to commit SHAs.
+
 ## 0.1.1 - 2026-11-06
 
 - Install in VSCodium and in VS Code 1.143. The extension needed VS Code 1.144 before, which VSCodium has not reached yet.

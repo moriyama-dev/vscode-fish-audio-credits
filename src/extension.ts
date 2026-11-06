@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { fetchBalances, InvalidApiKeyError } from './core/fish-api';
+import { fetchBalances, InvalidApiKeyError, isWellFormedApiKey } from './core/fish-api';
 import { COMMANDS, CreditStatus, SECRET_KEY } from './credit-status';
 
 const API_KEYS_PAGE = 'https://fish.audio/app/api-keys';
@@ -15,6 +15,7 @@ export function activate(context: vscode.ExtensionContext): CreditStatus {
     vscode.commands.registerCommand(COMMANDS.setApiKey, () => setApiKey(context.secrets, status)),
     vscode.commands.registerCommand(COMMANDS.clearApiKey, () => clearApiKey(context.secrets, status)),
     vscode.commands.registerCommand(COMMANDS.refresh, () => status.refresh()),
+    vscode.commands.registerCommand(COMMANDS.showDetails, () => status.showDetails()),
     vscode.commands.registerCommand(COMMANDS.openBilling, () =>
       vscode.env.openExternal(vscode.Uri.parse(BILLING_PAGE)),
     ),
@@ -35,7 +36,15 @@ async function setApiKey(secrets: vscode.SecretStorage, status: CreditStatus): P
       prompt: vscode.l10n.t('Paste your Fish Audio API key. It is kept in VS Code secret storage, not in settings.'),
       password: true,
       ignoreFocusOut: true,
-      validateInput: (value) => (value.trim() === '' ? vscode.l10n.t('Enter an API key.') : undefined),
+      validateInput: (value) => {
+        const trimmed = value.trim();
+        if (trimmed === '') {
+          return vscode.l10n.t('Enter an API key.');
+        }
+        return isWellFormedApiKey(trimmed)
+          ? undefined
+          : vscode.l10n.t('This does not look like an API key. Paste only the key, without spaces or line breaks.');
+      },
     })
   )?.trim();
   if (!apiKey) {

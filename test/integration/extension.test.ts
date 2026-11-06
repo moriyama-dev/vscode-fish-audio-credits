@@ -98,8 +98,25 @@ describe('Credit Balance for Fish Audio', () => {
     assert.equal(status.current.kind, 'ok');
     assert.match(status.statusBarItem.text, /100,712/);
     assert.equal(status.statusBarItem.backgroundColor, undefined);
+    assert.equal(status.statusBarItem.command, COMMANDS.showDetails, 'a click opens the details');
     const tooltip = status.statusBarItem.tooltip as vscode.MarkdownString;
     assert.match(tooltip.value, /120,000/);
+    assert.match(tooltip.value, /Next credit reset/);
+    assert.match(tooltip.value, /Plan period ends/);
+  });
+
+  it('opens the details in a list on click, and closes with Escape', async () => {
+    const secrets = new MemorySecrets();
+    await secrets.store(SECRET_KEY, 'k');
+    const { fn, calls } = fakeFetch(healthy);
+    const status = make(secrets, fn);
+    await status.refresh();
+    const before = calls.length;
+    const shown = status.showDetails();
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await vscode.commands.executeCommand('workbench.action.closeQuickOpen');
+    await shown;
+    assert.equal(calls.length, before, 'closing the list does not refresh');
   });
 
   it('highlights a low balance', async () => {
