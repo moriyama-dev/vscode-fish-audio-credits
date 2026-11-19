@@ -2,7 +2,7 @@
   "name": "vscode-fish-audio-credits",
   "displayName": "Credit Balance for Fish Audio",
   "description": "%description%",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "moriyama-dev",
   "license": "MIT",
   "icon": "images/icon.png",
@@ -119,6 +119,7 @@
     "@vscode/vsce": "4.1.0",
     "esbuild": "0.28.2",
     "eslint": "10.14.0",
+    "ovsx": "1.3.0",
     "prettier": "3.9.10",
     "typescript": "5.9.3",
     "typescript-eslint": "8.72.1"

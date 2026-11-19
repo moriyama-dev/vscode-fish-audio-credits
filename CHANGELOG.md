@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1 - 2026-11-18
+
+- The extension is on [Open VSX](https://open-vsx.org/extension/moriyama-dev/vscode-fish-audio-credits), so VSCodium installs and updates it from its Extensions view.
+- The README links to GitHub Issues for bug reports and requests.
+
 ## 0.2.0 - 2026-11-06
 
 - Click the status bar item to see the details in a list at the top of the window. Before, a click refreshed the balance, and the details only appeared on hover. Refresh is now in the details and in the Command Palette.

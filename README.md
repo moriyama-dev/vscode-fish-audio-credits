@@ -4,6 +4,8 @@ English | [日本語](README.ja.md)
 
 See how many Fish Audio credits you have left without leaving VS Code. Your balance stays in the status bar and refreshes on its own.
 
+Found a problem or have an idea? [Open an issue on GitHub](https://github.com/moriyama-dev/vscode-fish-audio-credits/issues).
+
 ## Install
 
 The extension works the same on Windows, macOS and Linux (including Ubuntu).
@@ -23,28 +25,20 @@ code --install-extension moriyama-dev.vscode-fish-audio-credits
 
 ### VSCodium
 
-The extension is not on Open VSX yet, so install the `.vsix` file from GitHub Releases. Once it is on Open VSX, VSCodium will find it in the Extensions view and update it automatically like any other extension.
+1. Open the Extensions view, with the same shortcut as in VS Code.
+2. Search for **Credit Balance for Fish Audio** and click **Install**.
 
-**The easy way (all operating systems):**
-
-1. Download `vscode-fish-audio-credits-<version>.vsix` from the [latest release](https://github.com/moriyama-dev/vscode-fish-audio-credits/releases/latest).
-2. In VSCodium, open the Extensions view, click the **...** menu at the top and choose **Install from VSIX...**, then pick the downloaded file.
-
-**Install or update with one command.** Run the same command again whenever a new version is released; it always fetches the latest one.
-
-macOS and Ubuntu (Terminal):
+VSCodium gets the extension from [Open VSX](https://open-vsx.org/extension/moriyama-dev/vscode-fish-audio-credits). You can also install it from a terminal:
 
 ```sh
-url=$(curl -fsSL https://api.github.com/repos/moriyama-dev/vscode-fish-audio-credits/releases/latest | grep -o 'https://[^"]*\.vsix' | head -n 1) && curl -fsSL -o /tmp/vscode-fish-audio-credits.vsix "$url" && codium --install-extension /tmp/vscode-fish-audio-credits.vsix --force
+codium --install-extension moriyama-dev.vscode-fish-audio-credits
 ```
 
-Windows (PowerShell):
+**Updates are automatic** here too: VSCodium installs new versions from Open VSX by itself.
 
-```powershell
-$u = (Invoke-RestMethod https://api.github.com/repos/moriyama-dev/vscode-fish-audio-credits/releases/latest).assets | Where-Object name -like '*.vsix' | Select-Object -First 1 -ExpandProperty browser_download_url; Invoke-WebRequest $u -OutFile "$env:TEMP\vscode-fish-audio-credits.vsix"; codium --install-extension "$env:TEMP\vscode-fish-audio-credits.vsix" --force
-```
+### From a `.vsix` file
 
-To hear about new versions, click **Watch → Custom → Releases** on the [GitHub repository](https://github.com/moriyama-dev/vscode-fish-audio-credits).
+Every release also has a `.vsix` file on [GitHub Releases](https://github.com/moriyama-dev/vscode-fish-audio-credits/releases/latest), for editors that use neither the Marketplace nor Open VSX. In the Extensions view, click the **...** menu at the top, choose **Install from VSIX...** and pick the downloaded file. A copy installed this way does not update itself, so install the newer file when a new version is released.
 
 ### If `code` or `codium` is not found
 

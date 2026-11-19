@@ -4,6 +4,8 @@
 
 Fish Audio のクレジットがあとどれだけ残っているかを、VS Code の中で確認できます。残高はステータスバー（画面の一番下の帯）に出ていて、自動で更新されます。
 
+不具合や要望があれば、[GitHub の Issues](https://github.com/moriyama-dev/vscode-fish-audio-credits/issues) でお知らせください。
+
 ## インストール
 
 Windows、macOS、Linux（Ubuntu を含む）のどれでも同じように使えます。
@@ -23,28 +25,20 @@ code --install-extension moriyama-dev.vscode-fish-audio-credits
 
 ### VSCodium
 
-この拡張機能はまだ Open VSX に載っていないので、GitHub Releases の `.vsix` ファイルから入れます。Open VSX に載ったあとは、ほかの拡張機能と同じように VSCodium の拡張機能ビューで見つかり、自動で更新されます。
+1. 拡張機能ビューを開きます。ショートカットは VS Code と同じです。
+2. **Credit Balance for Fish Audio** を検索して、**Install**（インストール）を押します。
 
-**簡単な方法（どの OS でも同じ）:**
-
-1. [最新のリリース](https://github.com/moriyama-dev/vscode-fish-audio-credits/releases/latest)から `vscode-fish-audio-credits-<バージョン>.vsix` をダウンロードします。
-2. VSCodium で拡張機能ビューを開き、上部の **...** メニューから **Install from VSIX...**（VSIX からのインストール）を選んで、ダウンロードしたファイルを指定します。
-
-**1 つのコマンドでインストール・更新する方法:** 新しいバージョンが出たら、同じコマンドをもう一度実行するだけで最新版に入れ替わります。
-
-macOS と Ubuntu（ターミナル）:
+VSCodium は、この拡張機能を [Open VSX](https://open-vsx.org/extension/moriyama-dev/vscode-fish-audio-credits) から入れます。ターミナルから入れる場合は、次のコマンドです。
 
 ```sh
-url=$(curl -fsSL https://api.github.com/repos/moriyama-dev/vscode-fish-audio-credits/releases/latest | grep -o 'https://[^"]*\.vsix' | head -n 1) && curl -fsSL -o /tmp/vscode-fish-audio-credits.vsix "$url" && codium --install-extension /tmp/vscode-fish-audio-credits.vsix --force
+codium --install-extension moriyama-dev.vscode-fish-audio-credits
 ```
 
-Windows（PowerShell）:
+**こちらも更新は自動です。** 新しいバージョンが出ると、VSCodium が Open VSX から自動で入れ替えます。
 
-```powershell
-$u = (Invoke-RestMethod https://api.github.com/repos/moriyama-dev/vscode-fish-audio-credits/releases/latest).assets | Where-Object name -like '*.vsix' | Select-Object -First 1 -ExpandProperty browser_download_url; Invoke-WebRequest $u -OutFile "$env:TEMP\vscode-fish-audio-credits.vsix"; codium --install-extension "$env:TEMP\vscode-fish-audio-credits.vsix" --force
-```
+### `.vsix` ファイルから入れる
 
-新しいバージョンが出たときに通知を受け取りたい場合は、[GitHub のリポジトリ](https://github.com/moriyama-dev/vscode-fish-audio-credits)で **Watch → Custom → Releases** を選んでください。
+Marketplace も Open VSX も使わないエディター向けに、リリースごとの `.vsix` ファイルを [GitHub Releases](https://github.com/moriyama-dev/vscode-fish-audio-credits/releases/latest) に置いています。拡張機能ビューの上部にある **...** メニューから **Install from VSIX...**（VSIX からのインストール）を選び、ダウンロードしたファイルを指定します。この方法で入れたものは自動では更新されないので、新しいバージョンが出たら、新しいファイルを入れ直してください。
 
 ### `code` や `codium` のコマンドが見つからないとき
 

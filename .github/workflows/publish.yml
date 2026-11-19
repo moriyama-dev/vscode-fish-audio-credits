@@ -1,15 +1,15 @@
 name: Publish
 
 # A version tag (v0.1.0, ...) builds, tests and publishes that version to the
-# Visual Studio Marketplace through Trusted Publishing, then attaches the
-# .vsix to a GitHub release. Running the workflow by hand does everything
+# Visual Studio Marketplace through Trusted Publishing and to Open VSX, then
+# attaches the .vsix to a GitHub release. Running the workflow by hand does everything
 # except publishing, so the pipeline can be checked without releasing.
 #
 # Two jobs on purpose: the build job installs every dev dependency and runs
 # the tests with a read-only token and no publishing rights. Only the
-# publish job can mint the Marketplace credential and write the release,
-# and it installs nothing but the pinned packages from package-lock.json,
-# with their install scripts turned off.
+# publish job can mint the Marketplace credential, read the Open VSX token
+# and write the release, and it installs nothing but the pinned packages
+# from package-lock.json, with their install scripts turned off.
 #
 # Actions are pinned to full commit SHAs so a moved tag cannot change them.
 on:
@@ -81,7 +81,7 @@ jobs:
         with:
           node-version: 24
 
-      # Only for vsce, at the version in package-lock.json; no install scripts run.
+      # Only for vsce and ovsx, at the versions in package-lock.json; no install scripts run.
       - run: npm ci --ignore-scripts
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
@@ -90,7 +90,13 @@ jobs:
           path: release
 
       - name: Publish to the Visual Studio Marketplace
-        run: npx --no-install vsce publish --oidc --packagePath release/*.vsix
+        run: npx --no-install vsce publish --oidc --skip-duplicate --packagePath release/*.vsix
+
+      # --skip-duplicate on both lets a failed run be retried after the other registry already has the version.
+      - name: Publish to Open VSX
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: npx --no-install ovsx publish --skip-duplicate --packagePath "release/vscode-fish-audio-credits-${GITHUB_REF_NAME#v}.vsix"
 
       - name: Create the GitHub release
         env:
